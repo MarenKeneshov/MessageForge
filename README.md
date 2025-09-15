@@ -21,6 +21,8 @@
 # MessageForge
 **MessageForge** is a simple app for stress testing SIM cards.
 
+![Screenshot](https://github.com/MarenKeneshov/MessageForge/blob/00b6b0d469b48da4022a757a4de215be5f17c778/Swagggggg.png)
+
 **Features:**
 - 🔥 SIM stress-test — automatically opens a set of recovery/verification pages.
 - ⚡ Speed — opens dozens of sites in seconds (with a delay for stability).
