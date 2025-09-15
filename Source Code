@@ -1,0 +1,145 @@
+#include <windows.h>
+#include <shellapi.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <chrono>
+#include <thread>
+
+inline void msleep(int ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }
+
+/*
+
+поиск пути к msedge.exe
+(стандартный браузер винды.почему именно он? да потому что он есть у всех.его хер удалишь.)
+
+*/
+std::wstring GetEdgePathGuess()
+{
+    const wchar_t* candidates[] =
+    {
+        L"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        L"C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+        L"C:\\Program Files (x86)\\Microsoft\\Edge Beta\\Application\\msedge.exe",
+        L"C:\\Program Files\\Microsoft\\Edge Beta\\Application\\msedge.exe",
+        L"msedge.exe"
+    };
+    for (auto p : candidates)
+    {
+        DWORD attr = GetFileAttributesW(p);
+        if (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY))
+        {
+            return std::wstring(p);
+        }
+    }
+    return L"msedge.exe";
+}
+
+// запуск Edge через CreateProcess
+bool LaunchEdgeProcess(const std::wstring& exePath, const std::wstring& args)
+{
+    STARTUPINFOW si{};
+    PROCESS_INFORMATION pi{};
+    si.cb = sizeof(si);
+
+    std::wstring cmdline = L"\"" + exePath + L"\" " + args;
+    std::vector<wchar_t> buf(cmdline.begin(), cmdline.end());
+    buf.push_back(0);
+
+    BOOL ok = CreateProcessW(
+        NULL,
+        buf.data(),
+        NULL, NULL, FALSE,
+        CREATE_NEW_CONSOLE,
+        NULL, NULL,
+        &si, &pi
+    );
+
+    if (ok)
+    {
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+    }
+    return ok == TRUE;
+}
+
+int wmain()
+{
+    using namespace std;
+
+    // красивый арт
+    cout <<
+        "  __  __                                ______                   \n"
+        " |  \\/  |                              |  ____|                  \n"
+        " | \\  / | ___  ___ ___  __ _  __ _  ___| |__ ___  _ __ __ _  ___ \n"
+        " | |\\/| |/ _ \\/ __/ __|/ _` |/ _` |/ _ \\  __/ _ \\| '__/ _` |/ _ \\\n"
+        " | |  | |  __/\\__ \\__ \\ (_| | (_| |  __/ | | (_) | | | (_| |  __/\n"
+        " |_|  |_|\\___||___/___/\\__,_|\\__, |\\___|_|  \\___/|_|  \\__, |\\___|\n"
+        "                              __/ |                    __/ |     \n"
+        "                             |___/                    |___/      \n\n";
+
+    cout << "Hello, user.\n";
+    msleep(1000);
+    cout << "The app allows you to perform stress tests on mobile numbers.\n";
+    msleep(1000);
+    cout << "This app is only for legal use.The author is not responsible for any malicious use of the app.\n";
+    msleep(1000);
+    cout << "Coded by MarenKeneshov\n";
+    cout << "GitHub: https://github.com/MarenKeneshov\n";
+    msleep(1000);
+
+    cout << "Wanna destroy this motherfucker?\nY/N? ";
+    char ch = 0;
+    cin >> ch;
+
+    if (!(ch == 'Y' || ch == 'y'))
+    {
+        cout << "Cancelled.\n";
+        return 0;
+    }
+
+    vector<wstring> urls =
+    {
+    L"https://id.vk.com/restore/#/resetPassword",
+    L"https://ok.ru/dk?st.cmd=anonymRecoveryStartPhoneLink",
+    L"https://www.ozon.ru/ozonid",
+    L"https://www.wildberries.ru/",
+    L"https://aliexpress.ru/",
+    L"https://passport.yandex.ru/auth/reg?retpath=https%3A%2F%2Fid.yandex.ru%2F&noreturn=1",
+    L"https://www.tiktok.com/login/phone-or-email",
+    L"https://www.instagram.com/accounts/password/reset/?hl=ru",
+    L"https://yandex.kz/search/?text=%D0%BF%D0%B8%D0%BD%D0%B0%D0%BF+%D0%BA%D0%B0%D0%B7%D0%B8%D0%BD%D0%BE+%D0%B2%D1%85%D0%BE%D0%B4&clid=2411726&lr=162",
+    L"https://iforgot.apple.com/password/verify/appleid",
+    L"https://account.apple.com/account#",
+    L"https://web.whatsapp.com/"
+    };
+
+    std::wstring edgePath = GetEdgePathGuess();
+
+    cout << "Launching Edge InPrivate step by step...\n";
+
+    for (size_t i = 0; i < urls.size(); ++i)
+    {
+        std::wstring args = L"--inprivate \"" + urls[i] + L"\"";
+
+        if (!LaunchEdgeProcess(edgePath, args))
+        {
+            setlocale(LC_ALL, "Rus");
+            wcerr << L"CreateProcess проёбан, пробую ShellExecute...\n";
+            ShellExecuteW(NULL, L"open", urls[i].c_str(), NULL, NULL, SW_SHOWNORMAL);
+        }
+
+        cout << "Opened [" << (i + 1) << "/" << urls.size() << "]: "
+            << std::string(urls[i].begin(), urls[i].end()) << "\n";
+
+        msleep(500); // задержка 500 мс между открытиями, чтобы твой комп не умер
+    }
+
+    // финальное сообщение. тут я накидал пафоса
+    cout << "\nHave Fun\n";
+
+    cin.ignore();
+    cin.get();
+
+    return 0;
+}
